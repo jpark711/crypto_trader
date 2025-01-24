@@ -1,0 +1,63 @@
+exchanges:
+  - gateio
+  - kucoin
+  - bithumb
+  - coinone
+  # - upbit
+
+fetch_methods:
+  fetch_tickers:
+    with_symbols: false
+  fetch_currencies:
+    with_symbols: false
+
+tickers:
+  fiats: ["USD", "KRW"]
+  ref: "USDT"
+  volume_threshold: 20000
+  fields: ["last", "low", "high", "quoteVolume"]
+  column_map:
+    quoteVolume: "volume"
+  exceptions:
+    - [[kucoin, USDT, ACE], [kucoin, USDT, KUCOIN_ACE]]
+    # - [[kucoin, USDT, AI], [kucoin, USDT, KUCOIN_AI]]
+    - [[kucoin, USDT, FIRE], [kucoin, USDT, KUCOIN_FIRE]]
+    - [[kucoin, USDT, GST], [kucoin, USDT, KUCOIN_GST]]
+    - [[kucoin, USDT, KACE], [kucoin, USDT, ACE]]
+    - [[kucoin, USDT, ZERO], [kucoin, USDT, ZEROLEND]]
+    - [[kucoin, USDT, QI], [kucoin, USDT, BENQI]]
+    - [[gateio, USDT, BEAM], [gateio, USDT, BEAM_GATEIO]]
+    - [[gateio, USDT, BEAMX], [gateio, USDT, BEAM]]
+
+currencies:
+  fields: ["withdraw", "deposit"]
+  networks: ["deposit_networks", "withdraw_networks"]
+  drop_columns: ["bid_withdraw_networks", "ask_deposit_networks"]
+  columns:
+    [
+      "exchange",
+      "ticker",
+      "active",
+      "deposit",
+      "withdraw",
+      "deposit_networks",
+      "withdraw_networks",
+    ]
+
+order_books:
+  header: ["bid", "ask"]
+  levels: ["exchange", "quote", "ticker"]
+  bid_nominal: ["bid_price", "bid_value"]
+  ask_nominal: ["ask_price", "ask_value"]
+  price_cols: ["bid_price", "ask_price"]
+  pos_cols: ["bid_position", "ask_position"]
+  exc_cols: ["bid_exchange_rate", "ask_exchange_rate"]
+  length:
+    kucoin: 100
+    gateio: 100
+    bithumb: 30
+    coinone: 16
+    upbit: null
+
+arbitrage:
+  gain_filter: null
