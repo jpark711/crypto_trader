@@ -250,7 +250,6 @@ class CryptoTrader:
         else:
             arb_filter = min(self.params["arbitrage"]["gain_filter"], len(arb_table))
         order_books = {}
-        timestamps = {}
         for row_ind in range(arb_filter):
             # Fetch order books for bid and ask positions
             for hdr in self.params["order_books"]["header"]:
