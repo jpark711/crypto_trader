@@ -13,6 +13,20 @@ from datetime import datetime
 
 class CryptoTrader:
     def __init__(self):
+        """
+        Initializes a new instance of the CryptoTrader class.
+
+        The constructor loads the configuration data and parameters and
+        instantiates the exchange clients and loads their trading fees.
+
+        Attributes:
+            params (dict): The configuration parameters.
+            cred (dict): The configuration credentials.
+            exchange_names (list): The names of the exchanges.
+            exchanges (dict): The exchange client instances.
+            trading_fees (dict): The trading fees for each exchange.
+        """
+        pass
         # Load config data and parameters
         config = Config()
         self.params = config.params
@@ -32,6 +46,33 @@ class CryptoTrader:
     async def fetch_data(
         self, exchange_name, exchange_instance, method, symbol=None, **kwargs
     ):
+        """
+        Fetches data from a given exchange using a given method and
+        (optionally) a given symbol.
+
+        If the symbol is None, the method is called with the given keyword
+        arguments and the result is stored in the session state under the
+        given method name with the given exchange name as the key.
+
+        If the symbol is not None, the method is called with the given keyword
+        arguments and the symbol and the result is stored in the session state
+        under the given method name with the given exchange name as the key
+        and the given symbol as a sub-key.
+
+        If an exception occurs, the error is printed and the function sleeps
+        for 5 seconds before retrying.
+
+        Args:
+            exchange_name (str): The name of the exchange to fetch data from.
+            exchange_instance (ccxt.pro.Exchange): The instance of the exchange to
+                fetch data from.
+            method (str): The method to call to fetch the data.
+            symbol (str, optional): The symbol to fetch data for. Defaults to None.
+            **kwargs: Additional keyword arguments to pass to the method.
+
+        Returns:
+            None
+        """
         if symbol is None:
             while True:
                 try:
@@ -59,6 +100,19 @@ class CryptoTrader:
     async def fetch_all_symbols_data(
         self, exchange_name, exchange_instance, method, **kwargs
     ):
+        """
+        Fetches the data for all symbols from an exchange.
+
+        Args:
+            exchange_name (str): The name of the exchange to fetch data from.
+            exchange_instance (ccxt.pro.Exchange): The instance of the exchange to
+                fetch data from.
+            method (str): The method to call to fetch the data.
+            **kwargs: Additional keyword arguments to pass to the method.
+
+        Returns:
+            None
+        """
         try:
             # Instatiate a session state by exchange
             if exchange_name not in st.session_state[method]:
@@ -85,6 +139,24 @@ class CryptoTrader:
 
     # Define the function to fetch bid ask data of multiple exchanges
     async def fetch_bid_ask(self, tickers):
+        """
+        Asynchronously fetches the bid and ask prices and quantities for multiple
+        exchanges.
+
+        This function iterates over the provided tickers, sets the tickers for each
+        exchange object, and retrieves the bid and ask data using the cached order
+        books.
+
+        Args:
+            tickers (dict): A dictionary where keys are exchange names and values
+                are the ticker data for the respective exchanges.
+
+        Returns:
+            dict: A dictionary where keys are exchange names and values are
+                dictionaries containing bid and ask prices, quantities, and values
+                for each ticker.
+        """
+
         bid_ask_data = {}
         for exc, ticker_dat in tickers.items():
             # Instantiate an exchange object
@@ -97,6 +169,29 @@ class CryptoTrader:
     #  Define a function to fetch an order book
     async def fetch_order_book(self, position, exchange, bid_ask_type, bid_ask_data):
         # Revert the ticker exceptions to get correct order book data
+        """
+        Asynchronously fetches and processes order book data for a given market position.
+
+        This function adjusts the ticker information based on exceptions, retrieves
+        order book data from an exchange, converts it into a pandas DataFrame, and
+        adjusts prices and values relative to a reference currency. It also appends
+        the current timestamp to the output.
+
+        Args:
+            position (str): The market position identifier used to determine the
+                correct ticker.
+            exchange (ccxt.pro.Exchange): The exchange instance used to fetch the
+                order book data.
+            bid_ask_type (str): The type of order book data to fetch ("bid" or "ask").
+            bid_ask_data (pd.DataFrame): DataFrame containing exchange rate and other
+                relevant data for adjusting the order book values.
+
+        Returns:
+            dict: A dictionary with the processed order book data as a pandas DataFrame
+                under the "data" key and the timestamp of retrieval under the
+                "timestamp" key.
+        """
+
         ticker_map = self.params["tickers"]["reverse_map"]
         if position in ticker_map.keys():
             query_position = ticker_map[position]
@@ -130,6 +225,26 @@ class CryptoTrader:
     # Define a function to format order book data
     async def format_order_book(self, arb_table, bid_ask_data):
         # Filter out the top positions based on the arbitrage gain filter
+        """
+        Asynchronously fetches and processes order book data for the top positions in
+        the arbitrage table.
+
+        This function filters out the top positions based on the arbitrage gain filter,
+        and then fetches order book data for each of the bid and ask positions of the
+        top positions. It then converts the order book data into DataFrames, adjusts
+        the prices and values relative to a reference currency, and appends the current
+        timestamp to the output.
+
+        Args:
+            arb_table (pd.DataFrame): The arbitrage table containing the positions to
+                consider.
+            bid_ask_data (pd.DataFrame): DataFrame containing exchange rate and other
+                relevant data for adjusting the order book values.
+
+        Returns:
+            tuple: A tuple containing the processed order book data as a dictionary and
+                the number of positions considered.
+        """
         if self.params["arbitrage"]["gain_filter"] is None:
             arb_filter = len(arb_table)
         else:
@@ -157,6 +272,19 @@ class CryptoTrader:
 
     # Define the function to fetch data from multiple exchanges
     async def fetch_multi_exchanges(self, method, with_symbols: bool, **kwargs):
+        """
+        Fetches data from multiple exchanges using the provided method.
+
+        Args:
+            method (str): The method to use for fetching data from each exchange.
+            with_symbols (bool): Whether to fetch data for all symbols available on
+                each exchange using `fetch_all_symbols_data` or just the default
+                data for each exchange using `fetch_data`.
+            **kwargs: Additional keyword arguments to pass to the chosen method.
+
+        Returns:
+            None
+        """
         try:
             if method not in st.session_state:
                 st.session_state[method] = {}
@@ -190,6 +318,25 @@ class CryptoTrader:
     # Define the function to format and combine tickers
     def format_tickers(self, tickers):
         # Instatiate an empty dictionary of all fields as keys
+        """
+        Formats and combines tickers data from multiple exchanges.
+
+        Args:
+            tickers (dict): A dictionary of tickers data from multiple exchanges.
+                The keys are the exchange names, and the values are dictionaries of
+                tickers data, where the keys are the ticker symbols and the values
+                are dictionaries of ticker data.
+
+        Returns:
+            pandas.DataFrame: A DataFrame containing the formatted and combined
+                tickers data. The index is a MultiIndex with the exchange name,
+                quote currency, and ticker symbol. The columns are the fields of
+                the tickers data, and the values are the corresponding data for
+                each ticker.
+
+        Raises:
+            None
+        """
         combined_tickers = {}
         for field in self.params["tickers"]["fields"]:
             combined_tickers[field] = {}
@@ -268,16 +415,31 @@ class CryptoTrader:
 
     # Define a function to format currency data
     def format_currencies(self, currencies):
-        # Fee information within networks field
-        # Kucoin: withdrawalMinFee (fee), depositFeeRate, depositTierFee
-        # Coinone: withdrawal_fee (fee), deposit_fee
-        # Gateio, Bithumb: None
+        """
+        Aggregate currency data into a pandas DataFrame.
 
-        # Trading Fee
-        # kucoin - fetch_markets
-        # gateio - fetch_trading_fees
+        Args:
+            currencies (dict): The currency data to be formatted.
 
-        # Aggregate currency data into a DataFrame
+        Returns:
+            pandas.DataFrame: The formatted currency data.
+
+        Notes:
+            The currency data is aggregated from the various exchanges and formatted into a single DataFrame.
+            The DataFrame has the following columns:
+
+                - ticker (str): The ticker symbol of the currency.
+                - exchange (str): The exchange on which the currency is traded.
+                - networks (list of str): The list of networks supported by the currency.
+                - active (bool): Whether the currency is active or not.
+                - deposit (bool): Whether the currency supports deposits.
+                - withdraw (bool): Whether the currency supports withdrawals.
+                - fee (float): The fee for the currency.
+                - trading_fee (float): The trading fee for the currency.
+
+            The DataFrame is indexed by the exchange and ticker symbol.
+
+        """
         currency_list = []
         for exchange, currency_values in currencies.items():
             for ticker, ticker_data in currency_values.items():
@@ -317,6 +479,37 @@ class CryptoTrader:
 
     # Define the function to format bid ask data
     def format_bid_ask(self, bid_ask_data):
+        """
+        Aggregate bid ask data into a pandas DataFrame.
+
+        Args:
+            bid_ask_data (dict): The bid ask data to be formatted.
+
+        Returns:
+            pandas.DataFrame: The formatted bid ask data.
+
+        Notes:
+            The bid ask data is aggregated from the various exchanges and formatted into a single DataFrame.
+            The DataFrame has the following columns:
+
+                - ticker (str): The ticker symbol of the currency.
+                - exchange (str): The exchange on which the currency is traded.
+                - networks (list of str): The list of networks supported by the currency.
+                - active (bool): Whether the currency is active or not.
+                - deposit (bool): Whether the currency supports deposits.
+                - withdraw (bool): Whether the currency supports withdrawals.
+                - fee (float): The fee for the currency.
+                - trading_fee (float): The trading fee for the currency.
+                - bid_price (float): The bid price of the currency.
+                - bid_quantity (float): The bid quantity of the currency.
+                - bid_value (float): The bid value of the currency.
+                - ask_price (float): The ask price of the currency.
+                - ask_quantity (float): The ask quantity of the currency.
+                - ask_value (float): The ask value of the currency.
+
+            The DataFrame is indexed by the exchange and ticker symbol.
+
+        """
         idx = pd.IndexSlice
         bid_ask_df_list = []
         for exc, bid_ask_dict in bid_ask_data.items():
@@ -387,6 +580,16 @@ class CryptoTrader:
 
     # Define a function to rename tickers with exceptions
     def rename_exceptions(self, df, ticker_exceptions=None):
+        """
+        Renames the tickers in the index of the DataFrame based on the exceptions defined in the "tickers" parameter.
+
+        Args:
+            df (pd.DataFrame): The DataFrame to be processed.
+            ticker_exceptions (dict, optional): The dictionary of old ticker names to new ticker names. Defaults to None.
+
+        Returns:
+            pd.DataFrame: The DataFrame with the renamed tickers in the index.
+        """
         if ticker_exceptions is None:
             ticker_exceptions = self.params["tickers"]["exceptions"]
         df_index = list(df.index)
@@ -398,6 +601,23 @@ class CryptoTrader:
 
     # Define a function to calculate the arbitrage across the exchanges
     def calculate_arbitrage(self, ticker_data, currency_data, bid_ask_data):
+        """
+        Calculate the arbitrage opportunities across the exchanges.
+
+        Args:
+            ticker_data (pd.DataFrame): The DataFrame containing the ticker data.
+            currency_data (pd.DataFrame): The DataFrame containing the currency data.
+            bid_ask_data (pd.DataFrame): The DataFrame containing the bid ask data.
+
+        Returns:
+            pd.DataFrame: The DataFrame containing the arbitrage opportunities.
+
+        Notes:
+            The function filters out inactive tickers and those with low trading volume.
+            It then calculates the best arbitrage opportunity for each ticker and
+            appends additional data to the result.
+
+        """
         # Filter out inactive tickers from the bid ask data
         merged_bid_ask = bid_ask_data.join(currency_data)
         avail_bid_ask = merged_bid_ask[~merged_bid_ask.active.isna()]
@@ -505,6 +725,26 @@ class CryptoTrader:
 
     # Define a function to compute the nominal arbitrage gain
     async def calculate_arbitrage_gain(self, arb_table, order_books):
+        """
+        Computes the arbitrage gain for each row in the `arb_table` using the order book data in `order_books`.
+
+        The function iterates over each row in `arb_table`, and for each row, it iterates over the matching
+        order books in `order_books`. It accumulates the quantity of each order book that could be used to
+        make a trade and the value of that trade. The value is the difference between the bid and ask prices
+        multiplied by the quantity of the trade.
+
+        The function also loads the timestamps of the order books into the `arb_table`.
+
+        The function then rounds the arbitrage gain and sorts the table by the values.
+
+        Args:
+            arb_table (pd.DataFrame): A DataFrame containing the arbitrage opportunities.
+            order_books (dict): A dictionary containing the order book data.
+
+        Returns:
+            pd.DataFrame: The DataFrame with the calculated arbitrage gains and order quantities.
+
+        """
         # Compute arbitrage gains and order quantities
         for row_ind in range(self.arb_filter):
             bid_hdr = str(row_ind) + "_" + "bid"
@@ -560,6 +800,21 @@ class CryptoTrader:
 
     # Define the asynchronous function to update streamlit objects
     async def update_streamlit(self):
+        """
+        Asynchronously updates the Streamlit objects with the arbitrage data.
+
+        This function runs an infinite loop that waits for the ticker and currency
+        data to be loaded, fetches and formats the bid ask data, finds arbitrage
+        trade opportunities, fetches and formats order books data, and computes the
+        nominal arbitrage gain. It then updates the Streamlit objects with the
+        computed data.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         # Instantiate the Streamlit objects
         table_title = st.empty()
         table_title.write("### Prices in " + self.params["tickers"]["ref"])
@@ -621,7 +876,17 @@ class CryptoTrader:
 
     # Define a function to close all exchange clients
     async def close_all_exchanges(self):
-        # Close the exchange clients
+        """
+        Close all exchange clients.
+
+        This method is used to close all exchange clients when the Streamlit app is stopped.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         client_list = []
         for exc in self.exchange_names:
             client_list.append(self.exchanges[exc].close())
@@ -629,6 +894,19 @@ class CryptoTrader:
 
     # Define the Streamlit app
     async def main(self):
+        """
+        Build the Streamlit app and create async tasks for updating exchange data.
+
+        This method is the entry point for the Streamlit app and is responsible for
+        loading the markets for each exchange, creating the session states, and
+        creating async tasks for updating exchange data.
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         # Load markets of each exchange
         load_markets_coroutines = []
         for exchange_instance in self.exchanges.values():
