@@ -20,7 +20,6 @@ tickers:
     quoteVolume: "volume"
   exceptions:
     - [[kucoin, USDT, ACE], [kucoin, USDT, KUCOIN_ACE]]
-    # - [[kucoin, USDT, AI], [kucoin, USDT, KUCOIN_AI]]
     - [[kucoin, USDT, FIRE], [kucoin, USDT, KUCOIN_FIRE]]
     - [[kucoin, USDT, GST], [kucoin, USDT, KUCOIN_GST]]
     - [[kucoin, USDT, KACE], [kucoin, USDT, ACE]]
@@ -28,6 +27,8 @@ tickers:
     - [[kucoin, USDT, QI], [kucoin, USDT, BENQI]]
     - [[gateio, USDT, BEAM], [gateio, USDT, BEAM_GATEIO]]
     - [[gateio, USDT, BEAMX], [gateio, USDT, BEAM]]
+    - [[bithumb, KRW, NEIRO], [bithumb, KRW, NEIROCTO]]
+    - [[coinone, KRW, NEIRO], [coinone, KRW, NEIROCTO]]
 
 currencies:
   fields: ["withdraw", "deposit"]
